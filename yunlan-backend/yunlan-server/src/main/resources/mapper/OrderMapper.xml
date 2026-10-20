@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.fastdine.mapper.OrderMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into orders (number, status, user_id, address_book_id, order_time, checkout_time,
+                            pay_method, pay_status, amount, remark, phone, address, user_name, consignee,
+                            cancel_reason, rejection_reason, cancel_time, estimated_delivery_time,
+                            delivery_status, delivery_time, pack_amount, tableware_number, tableware_status)
+        values (#{number}, #{status}, #{userId}, #{addressBookId}, #{orderTime}, #{checkoutTime},
+                #{payMethod}, #{payStatus}, #{amount}, #{remark}, #{phone}, #{address}, #{userName}, #{consignee},
+                #{cancelReason}, #{rejectionReason}, #{cancelTime}, #{estimatedDeliveryTime},
+                #{deliveryStatus}, #{deliveryTime}, #{packAmount}, #{tablewareNumber}, #{tablewareStatus})
+    </insert>
+
+    <!-- 动态更新：状态流转只改传了值的列。
+         pack_amount / tableware_number 在下单时写死，不参与更新（实体里是 int 基本类型，判空无意义） -->
+    <update id="update" parameterType="com.fastdine.entity.Orders">
+        update orders
+        <set>
+            <if test="status != null">status = #{status},</if>
+            <if test="checkoutTime != null">checkout_time = #{checkoutTime},</if>
+            <if test="payStatus != null">pay_status = #{payStatus},</if>
+            <if test="amount != null">amount = #{amount},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="cancelReason != null">cancel_reason = #{cancelReason},</if>
+            <if test="rejectionReason != null">rejection_reason = #{rejectionReason},</if>
+            <if test="cancelTime != null">cancel_time = #{cancelTime},</if>
+            <if test="estimatedDeliveryTime != null">estimated_delivery_time = #{estimatedDeliveryTime},</if>
+            <if test="deliveryStatus != null">delivery_status = #{deliveryStatus},</if>
+            <if test="deliveryTime != null">delivery_time = #{deliveryTime},</if>
+            <if test="tablewareStatus != null">tableware_status = #{tablewareStatus},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <select id="getByNumberAndUserId" resultType="com.fastdine.entity.Orders">
+        select * from orders where number = #{number} and user_id = #{userId} limit 1
+    </select>
+
+    <!-- C 端历史订单 / 管理端条件搜索共用 -->
+    <select id="pageQuery" parameterType="com.fastdine.dto.OrdersPageQueryDTO"
+            resultType="com.fastdine.entity.Orders">
+        select * from orders
+        <where>
+            <if test="number != null and number != ''">
+                and number like concat('%', #{number}, '%')
+            </if>
+            <if test="phone != null and phone != ''">
+                and phone like concat('%', #{phone}, '%')
+            </if>
+            <if test="userId != null">
+                and user_id = #{userId}
+            </if>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+            <if test="beginTime != null">
+                and order_time &gt;= #{beginTime}
+            </if>
+            <if test="endTime != null">
+                and order_time &lt;= #{endTime}
+            </if>
+        </where>
+        order by order_time desc
+    </select>
+    <!-- 营业额：已完成订单的 amount 求和 -->
+    <select id="sumByMap" parameterType="map" resultType="java.lang.Double">
+        select sum(amount) from orders
+        <where>
+            <if test="begin != null">and order_time &gt;= #{begin}</if>
+            <if test="end != null">and order_time &lt;= #{end}</if>
+            <if test="status != null">and status = #{status}</if>
+        </where>
+    </select>
+
+    <!-- 订单数：按时间区间 + 可选状态 -->
+    <select id="countByMap" parameterType="map" resultType="java.lang.Integer">
+        select count(id) from orders
+        <where>
+            <if test="begin != null">and order_time &gt;= #{begin}</if>
+            <if test="end != null">and order_time &lt;= #{end}</if>
+            <if test="status != null">and status = #{status}</if>
+        </where>
+    </select>
+
+    <!-- 销量 TOP10：只统计已完成订单，按明细里的数量求和 -->
+    <select id="getSalesTop10" resultType="com.fastdine.dto.GoodsSalesDTO">
+        select od.name as name, sum(od.number) as number
+        from order_detail od
+        join orders o on od.order_id = o.id
+        where o.status = 5
+        <if test="begin != null">and o.order_time &gt;= #{begin}</if>
+        <if test="end != null">and o.order_time &lt;= #{end}</if>
+        group by od.name
+        order by number desc
+        limit 10
+    </select>
+
+</mapper>

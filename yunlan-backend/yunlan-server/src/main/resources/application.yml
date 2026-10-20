@@ -1,0 +1,96 @@
+server:
+  port: 8081
+
+spring:
+  profiles:
+    active: dev
+  main:
+    allow-circular-references: true
+  servlet:
+    multipart:
+      #单个文件大小上限
+      max-file-size: 5MB
+      #单次请求大小上限
+      max-request-size: 10MB
+  datasource:
+    druid:
+      driver-class-name: ${fastdine.datasource.driver-class-name}
+      url: jdbc:mysql://${fastdine.datasource.host}:${fastdine.datasource.port}/${fastdine.datasource.database}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+      username: ${fastdine.datasource.username}
+      password: ${fastdine.datasource.password}
+  # Redis（店铺营业状态等运行时开关存这里）
+  redis:
+    host: localhost
+    port: 6379
+    database: 0
+    timeout: 3000ms
+
+mybatis:
+  #mapper配置文件
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.fastdine.entity
+  configuration:
+    #开启驼峰命名
+    map-underscore-to-camel-case: true
+
+logging:
+  level:
+    com:
+      fastdine:
+        mapper: debug
+        service: info
+        controller: info
+
+fastdine:
+  jwt:
+    # 设置jwt签名加密时使用的秘钥
+    admin-secret-key: fastdine
+    # 设置jwt过期时间
+    admin-ttl: 7200000
+    # 设置前端传递过来的令牌名称
+    admin-token-name: token
+    # 用户端（微信小程序）令牌配置，令牌放在请求头 authentication 里
+    user-secret-key: fastdine_user
+    user-ttl: 7200000
+    user-token-name: authentication
+  # 微信小程序配置
+  # appid / secret 留空时，用户端微信登录会自动降级为本地 mock（固定 openid），
+  # 拿到自己的小程序 AppID 后填上即可切回真实的 jscode2session 调用，无需改代码
+  wechat:
+    appid: ""
+    secret: ""
+    mock-openid: local-mock-openid
+    # 是否启用真实微信支付（day08）。本机无商户号/证书，默认 false：
+    # /user/order/payment 走本地模拟支付，直接把订单置为已支付，便于自测联调；
+    # 填好下面的商户信息后改为 true 即切回真实 jsapi 支付，代码无需改动。
+    pay-enabled: false
+    # 以下 6 项仅在 pay-enabled=true 时使用，留空不影响启动
+    mchid: ""
+    mch-serial-no: ""
+    private-key-file-path: ""
+    api-v3-key: ""
+    we-chat-pay-cert-file-path: ""
+    notify-url: ""
+    refund-notify-url: ""
+  # 店铺信息（C 端小程序展示用）
+  shop:
+    # 商家客服电话，小程序「联系商家」按钮展示并可直接拨打
+    phone: 400-618-4000
+  # 文件上传（本地磁盘存储）
+  upload:
+    # 存储根目录，相对路径以启动目录为基准
+    path: upload
+    # 访问 URL 前缀，对应静态资源映射
+    url-prefix: /upload
+  # 跨域配置
+  cors:
+    # 允许的来源，多个用逗号分隔；生产环境建议改成具体域名
+    allowed-origins: "*"
+  # 订单定时任务（OrderTask）
+  order:
+    # 待付款超时时间（分钟）：超过则自动取消
+    timeout-pay-minutes: 15
+    # 派送中超时时间（分钟）：超过则自动完成
+    timeout-delivery-minutes: 60
+    # 定时任务执行间隔（毫秒），课程是 cron 每分钟，这里做成可配置便于自测
+    task-interval-ms: 30000

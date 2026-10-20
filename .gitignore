@@ -1,0 +1,45 @@
+# ---- 构建产物 ----
+target/
+*.class
+
+# ---- IDE ----
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# ---- 运行日志 ----
+*.log
+logs/
+
+# ---- 本地文件上传目录 ----
+upload/
+yunlan-backend/upload/
+
+# ---- 原始资料压缩包（体积大，不入库） ----
+*.rar
+*.zip
+
+# ---- 管理端前端 dist ----
+# 这份 dist 无法从源码重建（课程只给了后端源码），是唯一的运行副本，所以必须入库；
+# 只排除 source map —— 11M 体积，本地调试用得上，运行和打包都不需要。
+yunlan-backend/yunlan-server/src/main/resources/static/*.map
+yunlan-backend/yunlan-server/src/main/resources/static/**/*.map
+
+# ---- 小程序（uni-app 编译产物里的依赖占位，无实际内容） ----
+yunlan-mp/node-modules/
+yunlan-mp/project.private.config.json
+
+# ---- 工具/会话缓存 ----
+.workbuddy/
+.slidep/
+
+# ---- 系统 ----
+Thumbs.db
+.DS_Store
+
+# ---- 本地开发用，不入库 ----
+/TESTING.md
+/scripts/audit_mp_api.py
+/scripts/gen_logo.py
+/scripts/gen_favicon.py

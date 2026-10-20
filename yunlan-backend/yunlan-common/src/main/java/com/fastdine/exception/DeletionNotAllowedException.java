@@ -1,0 +1,9 @@
+package com.fastdine.exception;
+
+public class DeletionNotAllowedException extends BaseException {
+
+    public DeletionNotAllowedException(String msg) {
+        super(msg);
+    }
+
+}

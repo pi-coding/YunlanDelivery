@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.fastdine.mapper.ShoppingCartMapper">
+
+    <!-- 查看购物车：只按 userId 过滤 -->
+    <select id="list" parameterType="com.fastdine.entity.ShoppingCart"
+            resultType="com.fastdine.entity.ShoppingCart">
+        select * from shopping_cart
+        <where>
+            <if test="userId != null">
+                and user_id = #{userId}
+            </if>
+            <if test="dishId != null">
+                and dish_id = #{dishId}
+            </if>
+            <if test="setmealId != null">
+                and setmeal_id = #{setmealId}
+            </if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <!-- 判重：菜品要看「菜品 + 口味」，套餐只看套餐；无口味菜品要匹配 dish_flavor 为空的行 -->
+    <select id="getByDishOrSetmeal" parameterType="com.fastdine.entity.ShoppingCart"
+            resultType="com.fastdine.entity.ShoppingCart">
+        select * from shopping_cart
+        where user_id = #{userId}
+        <choose>
+            <when test="dishId != null">
+                and dish_id = #{dishId}
+                <choose>
+                    <when test="dishFlavor != null and dishFlavor != ''">
+                        and dish_flavor = #{dishFlavor}
+                    </when>
+                    <otherwise>
+                        and (dish_flavor is null or dish_flavor = '')
+                    </otherwise>
+                </choose>
+            </when>
+            <otherwise>
+                and setmeal_id = #{setmealId}
+            </otherwise>
+        </choose>
+        limit 1
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into shopping_cart (name, image, user_id, dish_id, setmeal_id, dish_flavor, number, amount, create_time)
+        values (#{name}, #{image}, #{userId}, #{dishId}, #{setmealId}, #{dishFlavor}, #{number}, #{amount},
+                #{createTime})
+    </insert>
+
+    <!-- 再来一单：把历史订单明细批量写回购物车 -->
+    <insert id="insertBatch" parameterType="list">
+        insert into shopping_cart (name, image, user_id, dish_id, setmeal_id, dish_flavor, number, amount, create_time)
+        values
+        <foreach collection="list" item="sc" separator=",">
+            (#{sc.name}, #{sc.image}, #{sc.userId}, #{sc.dishId}, #{sc.setmealId}, #{sc.dishFlavor},
+             #{sc.number}, #{sc.amount}, #{sc.createTime})
+        </foreach>
+    </insert>
+
+</mapper>
